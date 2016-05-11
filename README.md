@@ -36,29 +36,44 @@ Minor feedback points refered to the design aspect, colors, fonts placement, the
 ### index.thml versions:
 
 v1 
+
   - basic graph reading the data from the tsv
+
 v2 
+
   - added interactivity - selected/unselected lines change shape
   - lines interact also with legend lines/text
+
 v3
+
   - added bar charts
+
 v4
+
   - added map and circle graphs
   - move circles to the middle of the regions
+
 v5 
+
   - link bubbles to the interactive graph
   - add scaling to the circles
+
 v6 
+
   - add a default value for the bubbles (the overall total)
   - add interaction to the legend line and textas well
   - add legend for the circles on the map
+
 v7
+
   - beautify axes of graph
   - remove x axis; add a background set of bars with years written on top
   - remove y axis; add values on the background 
   - remove line for Canberra/ACT as the circles are too small
   - change legend text
+
 v8
+
   - add a selection variable and remove the default mode in which all lines are shown
   - change color of lines
   - exchange placeholders for the figure and graph
@@ -67,7 +82,9 @@ v8
   - add title to the graph
   - added animation
   - change all text style
+
 v9
+
   - properly arrange the svg and g elements inside the html doc
   - restructure code
   - fix indentation
