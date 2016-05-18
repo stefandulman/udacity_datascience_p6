@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <link rel="stylesheet" type="text/css" href="mystyle.css">
+  
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+    <style>
+    </style>
+    <script type="text/javascript">  
+      
+      function draw(geo_data) {
+
+          "use strict";
+        
+          var locations_bubbles = [
+              { name: "New South Wales", lat: -32.5, lon: 147},
+              { name: "Victoria", lat: -37.5, lon: 144},
+              { name: "Queensland", lat: -24, lon: 145},
+              { name: "South Australia", lat: -29.5, lon: 135.5},
+              { name: "Western Australia", lat: -26.5, lon: 122},
+              { name: "Tasmania", lat: -42, lon: 146.5},
+              { name: "Northern Territory", lat: -21, lon: 133.5},
+              { name: "Australian Capital Territory", lat: -35.308, lon: 149.124}
+          ];
+              
+          // geometry variables
+          var margin_x = 100,
+              margin_y = 50,
+              width_graph = 1000 - margin_x,
+              width_map = 350,
+              height = 600 - margin_y;
+
+          // which line is selected
+          var selected = 0;
+          
+          // map legend variables
+          var data_legendmap = ["Arrivals", "Departures"];
+          var colors_map = ["Blue", "Red"]
+          
+          // visa logic and display variables
+          var visas = ["Temporary visa - Total", "Permanent visa - Total", "Australian Citizen", "New Zealand Citizen (subclass 444)", "Other Visas"];
+          var visas_nicetext = ["Temporary visas", "Permanent Visas", "Australian Citizen", "New Zealand Citizen", "Other Visas"]
+          
+          // graph variables
+          var bg_color = ["#e8e8e8", "#f0f0f0"]  
+          var bar_width = 30;
+          
+          // overwrite y axes values
+          var miny = -150000;
+          var maxy =  350000;
+          // vertical grid spacing
+          var ystep = 50000;    
+        
+          // ----------------------------------------------------------------
+          //   create the svg + g elements for the graph
+          // ----------------------------------------------------------------
+
+          // container for all graph-related code
+          var svggraph = d3.select("body")
+              .append("svg")
+              .attr("class", "graph_container")
+              .attr("width", width_graph + margin_x)
+              .attr("height", height + margin_y)
+
+          // container for graph background
+          var graph_bg = svggraph.append("g")
+              .attr("class", "graph_bg")
+          
+          // container for all lines in the graph
+          svggraph.append("g")
+              .attr("class", "graph_lines");
+              
+          // container for all bars in the graph
+          svggraph.append("g")
+              .attr("class", "graph_bars");
+
+          // container for graph legend
+          var legend = d3.select(".graph_container")
+              .append("g")
+              .attr("class", "legend")
+              .attr("transform", "translate(" + (width_graph - 155) + "," + 82 + ")")
+              .selectAll("g")
+              .data(visas)
+              .enter()
+              .append("g");
+
+          // graph title
+          d3.select(".graph_container")
+              .append("text")
+              .attr("class", "graph_title")
+              .attr("x", 160)
+              .attr("y", 85)
+              .text("Net Overseas Migration - Australia (2004-2013)");
+        
+        
+
+          // ----------------------------------------------------------------
+          //   create the svg + g elements for the map
+          // ----------------------------------------------------------------
+        
+          // container for all map-related code
+          var svgmap = d3.select("body")
+              .append("svg")
+              .attr("class", "map_container")
+              .attr("width", width_map + margin_x)
+              .attr("height", height + margin_y)
+              .append("g")
+              .attr("class", "map");
+
+          // map subtitle
+          d3.select(".map_container")
+              .append("text")
+              .attr("class", "map_title")
+              .attr("x", width_map/2 + margin_x/2)
+              .attr("y", 65)
+              .text("Relative visa distribution across territory");
+
+          // container for bubbles on the map
+          var svgbubbles = d3.select(".map_container")
+              .append("g")
+              .attr("class", "bubblecontainer");
+        
+          // legend for the bubbles
+          var legend_map = d3.select(".map_container")
+              .append("g")
+              .attr("class", "legendmap")
+              .attr("transform", "translate(" + 30 + "," + (height - 70) + ")")
+              .selectAll("g")
+              .data(data_legendmap)
+              .enter()
+              .append("g");
+          
+          
+          
+          // ----------------------------------------------------------------
+          //   populate the legend for the bubbles
+          // ----------------------------------------------------------------
+          
+          // add rectangles to the bubble legend
+          legend_map.append("rect")
+              .attr("class", "bubblelegend_rect")
+              .attr("x", function(d) { return 0; })
+              .attr("y", function(d, i) { return 25*i; })
+              .attr("width", function(d) { return 40; })
+              .attr("height", function(d) { return 20; })
+              .attr("fill", function(d, i) { return colors_map[i]; });
+                      
+          // add text to the bubble legend
+          legend_map.append("text")
+              .attr("class", "bubblelegend_text")
+              .attr("y", function(d, i) { return i*25 + 15; })
+              .attr("x", 50)
+              .text(function(d) { return d; });
+              
+
+
+          // ----------------------------------------------------------------
+          //   draw the map
+          // ----------------------------------------------------------------
+        	var projection = d3.geo.mercator()
+    		      .center([157, -22])
+    		      .scale(600);
+
+    		  var path = d3.geo.path()
+    		      .projection(projection);
+
+          var map = svgmap.selectAll("path")
+              .data(geo_data.features)
+              .enter()
+              .append("path")
+              .attr("class", "map_path")
+              .attr("d", path)
+            
+            
+            
+          // ----------------------------------------------------------------
+          //   draw a pie chart
+          // ----------------------------------------------------------------
+
+          // pos - vector containing position 
+          // v1 - value of the first slice of the pie
+          // size - scalar between 0 and 1
+          function draw_pie(ind, v1, size) {
+          
+              var pos = locations_bubbles[ind];
+              var pie_data = [v1, 1-v1];
+              var maxradius = 40.0;
+              var radius = maxradius * Math.sqrt(size);
+            
+              var color = d3.scale.ordinal()
+                  .range(["#0000ff", "#ff0000"]);
+
+              var pie = d3.layout.pie()
+                  .sort(null)
+                  .value(function(d) { return d; });
+
+              var arc = d3.svg.arc()
+                  .outerRadius(radius - 10)
+                  .innerRadius(0);
+
+              var x = projection([pos.lon, pos.lat])[0];
+              var y = projection([pos.lon, pos.lat])[1];
+              var tr = "translate(" + x + "," + y + ")";
+
+
+              var g = svgbubbles.selectAll(".arc" + ind)
+                  .data(pie(pie_data))
+                  .enter()
+                  .append("g")
+                  .attr("class", "arc" + ind)
+                  .attr("class", "bubbles")
+                  .attr("transform", tr)
+                  .append("path")
+                  .attr("d", arc)
+                  .style("fill", function(d, i) { return color(i); });
+            };
+        
+        
+        
+            // ----------------------------------------------------------------
+            //   draw the actual plot
+            // ----------------------------------------------------------------
+            function draw_plot(nom_data) {
+
+                // figure out all unique values
+                var d_years = d3.nest()
+                    .key(function(d) { return d["Time"]})
+                    .entries(nom_data);
+                var d_vtype = d3.nest()
+                    .key(function(d) { return d["Type of Visa"]})
+                    .entries(nom_data);
+                var d_region = d3.nest()
+                    .key(function(d) { return d["Region"]})
+                    .entries(nom_data);
+            
+            
+                
+                // function updates all the bubbles
+                function show_bubbles() {
+                
+                    // get the values from the dataset
+                    var bubble_data = "";
+                    bubble_data = nom_data.filter(function(d) { 
+                        return (d["Type of Visa"]===visas[selected]);
+                    });
+                
+                    // compute overall arrivals
+                    var arrivals = d3.nest()
+                        .key(function(d) { return d["Region"]; })
+                        .rollup(function(d) { return d3.sum(d, function(e) { return e["NOM Arrivals"]; } )} )
+                        .entries(bubble_data);
+                
+                    // compute all departures
+                    var departures = d3.nest()
+                        .key(function(d) { return d["Region"]; })
+                        .rollup(function(d) { return d3.sum(d, function(e) { return e["NOM Departures"]; } )} )
+                        .entries(bubble_data);
+                
+                    // drop the first entry which is a total for all australia
+                    arrivals = arrivals.slice(1);
+                    departures = departures.slice(1);
+                
+                    // scale the arrivals vs departures
+                    var scaled_v1 = [];
+                    for (var i=0; i<arrivals.length; i+=1) {
+                        scaled_v1.push(1.0 * arrivals[i].values / (arrivals[i].values + departures[i].values));
+                    }
+                
+                    // compute the scaling with respect to all regions, except the first one (which is australia - as a grand total)
+                    var maxv1 = d3.max(d3.values(arrivals));
+                    var maxv2 = d3.max(d3.values(departures));
+                
+                    var scaled_size = [];
+                    for (var i=0; i<arrivals.length; i+=1) {
+                        var temp = (arrivals[i].values + departures[i].values) / (maxv1.values + maxv2.values);
+                        scaled_size.push(  (arrivals[i].values + departures[i].values) / (maxv1.values + maxv2.values) );
+                    };
+                
+                    for (var i=0; i<arrivals.length; i+=1) {
+                        draw_pie(i, scaled_v1[i], scaled_size[i]);
+                    };
+                };
+                
+                
+                
+                // -------------------------------------------
+                // create the scaling functions for the axes
+                // -------------------------------------------
+                
+                var time_extent = d3.extent(nom_data, function(d) {
+                    return d["Time"];
+                });
+
+                var time_scale = d3.time.scale()
+                    .range([margin_x, width_graph])
+                    .domain(time_extent);
+
+                var time_axis = d3.svg.axis()
+                    .scale(time_scale);
+
+                var count_extent = d3.extent(nom_data, function(d) {
+                    return d["NOM"];
+                });
+
+                var count_scale = d3.scale.linear()
+                    .range([height, margin_y])
+                    //.domain(count_extent);
+                    .domain([miny, maxy]);
+
+                var count_axis = d3.svg.axis()
+                    .scale(count_scale)
+                    .orient("left");
+            
+                // extract min and max y values
+                var cnt_s = count_scale([miny]);
+                var cnt_e =  count_scale([maxy]);
+
+                // extract start and end full years
+                var ys = time_extent[0].getFullYear();
+                var ye = time_extent[1].getFullYear();
+                var dx = (time_scale(time_extent[1]) - time_scale(time_extent[0])) / (ye - ys);
+                var startx = time_scale(time_extent[0]) - dx/2;
+            
+            
+                
+                // draw the background of the graph
+                var flag = 0;
+                for (var i=ys; i<=ye; i+=1) {
+                    graph_bg.append("rect")
+                      .attr("class", "graph_bg bars")
+                      .attr("x", startx + (i-ys)*dx)
+                      .attr("y", cnt_e)
+                      .attr("height", cnt_s-cnt_e)
+                      .attr("width", dx)
+                      .attr("fill", bg_color[flag]);
+                      flag = 1 - flag;
+                
+                    // draw the years on the graph
+                    graph_bg.append("text")
+                        .attr("class", "graph_bg ytext")
+                        .text(i)
+                        .attr("x", startx + (i-ys)*dx + dx/2)
+                        .attr("y", cnt_s - 10);
+                }
+            
+                
+                
+                // draw the value of the OY axis
+                for (var i=miny+ystep; i<maxy; i += ystep) {
+                    // add white lines for grid
+                    graph_bg.append("line")
+                        .attr("class", "graph_bg whitelines")
+                        .attr("x1", startx)
+                        .attr("x2", startx + time_scale(time_extent[1]) + dx/2)
+                        .attr("y1", count_scale(i))
+                        .attr("y2", count_scale(i))
+                        .attr("stroke", "white")
+                        .attr("stroke-width", function(d) { 
+                            if (i==0) return 3;
+                            return 1;
+                    });
+                  
+                    // add text for the values
+                    graph_bg.append("text")
+                        .attr("class", "graph_bg xtext")
+                        .text(i)
+                        .attr("x", startx + 3)
+                        .attr("y", count_scale(i) - 3);
+                }
+            
+            
+            
+                // draw the barcharts
+                function show_barchart() {
+
+                    var data = getfiltereddata();
+                
+                    d3.selectAll(".bar, .bar2")
+                        .remove();
+                
+                    d3.select(".graph_bars")
+                        .selectAll(".bar")
+                        .data(data)
+                        .enter()
+                        .append("rect")
+                        .attr("class", "bar")
+                        .attr("x", function(d) { return time_scale(d["Time"]) - bar_width/2; })
+                        .attr("width", function(d) { return bar_width; })
+                        .attr("y", function(d) { return count_scale(d["NOM Arrivals"]); })
+                        .attr("height", function(d, i) { return count_scale(0) - count_scale(d["NOM Arrivals"]); });
+                        
+                    d3.select(".graph_bars")
+                        .selectAll(".bar2") 
+                        .data(data)
+                        .enter()
+                        .append("rect")
+                        .attr("class", "bar2")
+                        .attr("x", function(d) { return time_scale(d["Time"]) - bar_width/2; })
+                        .attr("width", function(d) { return bar_width; })
+                        .attr("y", function(d) { return count_scale(0); })
+                        .attr("height", function(d, i) { return count_scale(0) - count_scale(d["NOM Departures"]); });
+                };
+            
+            
+                
+                // returns the data for a specific visa type and region
+                function getfiltereddata(cnt = selected) {
+                    return nom_data.filter(function(d) { 
+                        return (d["Region"]==="Australia" && d["Type of Visa"]===visas[cnt]);
+                    });
+                }
+            
+            
+
+                // function behind the cliking logic
+                function selectoneitem() {
+              
+                    d3.selectAll(".graphline, .legendline")
+                        .attr("stroke-width", 1)
+                        .attr("opacity", .2);
+                    d3.selectAll(".legendtext")
+                        .attr("opacity", .2);
+                    d3.selectAll(".graphline" + selected + ", .legendline" + selected)
+                        .attr("stroke-width", 4)
+                        .attr("opacity", 1);
+                    d3.selectAll(".legendtext" + selected)
+                        .attr("opacity", 1); 
+                
+                    show_barchart();
+                
+                    // remove all bubbles
+                    svgbubbles.selectAll(".bubbles")
+                        .remove();
+                    
+                    show_bubbles();
+                };
+            
+            
+            
+                // function draws a line for a region & visa type
+                function draw_line(cnt) {
+                                
+                    var line = d3.svg.line()
+                        .x(function(d) { return time_scale(d["Time"]); })
+                        .y(function(d) { return count_scale(d["NOM"]); });
+                    
+                    d3.select(".graph_lines")
+                        .append("path")
+                        .attr("class", function(d) { return "graphline graphline" + cnt;})
+                        .attr("d", line(getfiltereddata(cnt)))
+                        .attr("stroke", "black")
+                        .attr("stroke-width", 2)
+                        .attr("fill", "none")
+                        .on("mouseover", function(d) { 
+                            selected = cnt;
+                            selectoneitem(); 
+                        });
+                };
+            
+            
+      
+                // ----------------------------------------------------------------
+                //   populate the graph legend
+                // ----------------------------------------------------------------
+                legend.append("line")
+                    .attr("class", function(d, i) { return "legendline legendline" + i;})
+                    .attr("x1", function(d) { return 0; })
+                    .attr("x2", function(d) { return 30; })
+                    .attr("y1", function(d, i) { return 25*i; })
+                    .attr("y2", function(d, i) { return 25*i; })
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 2)
+                    .on("mouseover", function(d, i) { 
+                        selected = i;
+                        selectoneitem(); 
+                    });
+
+                legend.append("text")
+                    .attr("class", function(d, i) { return "legendtext legendtext" + i;})
+                    .attr("y", function(d, i) { return i * 25 + 5; })
+                    .attr("x", 50)
+                    .text(function(d, i) { return visas_nicetext[i]; })
+                    .attr("text-anchor", "start")
+                    .attr("font-size", "14px")
+                    .attr("opacity", 1)
+                    .on("mouseover", function(d, i) { 
+                        selected = i;
+                        selectoneitem(); 
+                    });
+
+
+
+                // ----------------------------------------------------------------
+                //   main starting logic
+                // ----------------------------------------------------------------  
+    
+                // display content
+                for (var i=0; i<5; i++) {
+                    draw_line(i);
+                };
+            
+                // animation code
+                selected = 0;
+                selectoneitem();
+                selected = 1;
+                var line_iterator = setInterval(function() {
+                    selectoneitem();
+                    selected++;
+                    if(selected >= 5) {
+                        selected = 4;
+                        clearInterval(line_iterator);
+                    }
+                }, 1000);
+            };
+
+        
+            // load the data file for visas and update some of its fields
+            var format = d3.time.format("%Y");
+            d3.tsv("netoverseasmigration.tsv", function(d) {
+                d["Time"] = format.parse(d["Time"]);
+                d["NOM"] = +d["NOM"];
+                d["NOM Arrivals"] = +d["NOM Arrivals"];
+                d["NOM Departures"] = +d["NOM Departures"];
+                return d;
+            }, draw_plot);
+        };
+      
+      </script>
+</head>
+  
+<body>
+  <script type="text/javascript">
+      d3.json("australia.json", draw);
+  </script>
+</body>
+
+</html>

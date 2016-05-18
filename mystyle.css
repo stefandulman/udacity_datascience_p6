@@ -1,0 +1,56 @@
+body {
+  font-family: sans-serif;
+}
+
+.graph_title {
+  font-size: 23px;
+  opacity: 1;
+}
+
+.map_title {
+  font-size: 14px;
+  text-anchor: middle;
+  opacity: .8;
+}
+
+.bubblelegend_rect {
+  opacity: 0.4;
+}
+
+.bubblelegend_text {
+  font-size: 14px;
+  opacity: .8;
+}
+
+.map_path {
+  fill: lightBlue;
+  stroke: black;
+  stroke-width: 0.3;
+  opacity: 0.2;
+}
+
+.bubbles {
+  opacity: 0.4;
+}
+
+.ytext {
+   text-anchor: middle;
+   font-size: 14px;
+   opacity: 0.4;
+}
+
+.xtext {
+  text-anchor: start;
+  font-size: 14px;
+  opacity: 0.4;
+}
+
+.bar {
+  fill: blue;
+  opacity: 0.3;
+}
+
+.bar2 {
+  fill: red;
+  opacity: 0.3;
+}
