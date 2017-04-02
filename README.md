@@ -4,6 +4,15 @@
 
 For this project I focused on a data set showing the net overseas migration pattern for Australia for a period of 11 years. The data contains information about how many people settled in or left the country and which types of visas they used. Additionally, the dataset contains information about which particular state they settled in or left.
 
+## How to visualize
+
+* download the files locally
+* start a local webserver (for example use the command: "python -m SimpleHTTPServer 8000")
+* open the local webserver (for example, start a web browser and go to: "localhost/8000)
+* click on index_final.html - you should see an interactive graph similar to the next image
+
+![alt text](https://github.com/stefandulman/udacity_datascience_p6/blob/master/projectoutput.jpg "Example project")
+
 ## Design 
 
 Initially I wanted to make a design showing the evolution of data over time. After discussing with my friends and also looking at the data patterns, it turned out that this kind of animation offered little insight for the data set. Hence, I decided to focus the animation/exploration on the types of visas instead.
