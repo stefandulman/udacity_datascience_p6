@@ -1,4 +1,4 @@
-# Project 6 - complete a data visualization using d3
+# Project 6 - complete a data visualization using javascript/d3
 
 ## Summary 
 
